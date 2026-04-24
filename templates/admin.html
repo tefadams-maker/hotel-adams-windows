@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h3><i class="fas fa-cogs"></i> Panel de Administración</h3>
+    
+    <!-- Tabs de navegación -->
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#usuarios" type="button" role="tab">👥 Usuarios</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="habitaciones-tab" data-bs-toggle="tab" data-bs-target="#habitaciones" type="button" role="tab">🏨 Habitaciones</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="configuracion-tab" data-bs-toggle="tab" data-bs-target="#configuracion" type="button" role="tab">⚙️ Configuración</button>
+        </li>
+    </ul>
+    
+    <!-- Contenido de tabs -->
+    <div class="tab-content" id="myTabContent">
+        
+        <!-- Tab 1: USUARIOS -->
+        <div class="tab-pane fade show active" id="usuarios" role="tabpanel">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-plus"></i> Nuevo Usuario</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('crear_usuario') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre Completo</label>
+                                <input type="text" name="nombre_completo" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Usuario (para login)</label>
+                                <input type="text" name="username" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contraseña</label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Rol</label>
+                                <select name="rol" class="form-select" required>
+                                    <option value="Recepcion">Recepción</option>
+                                    <option value="Gerencia">Gerencia</option>
+                                    <option value="Limpieza">Limpieza</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Usuario</button>
+                        <a href="/admin" class="btn btn-outline-secondary ms-2">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+            
+            <h5 class="mb-3">Lista de Usuarios</h5>
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Activo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>{{ usuario.id }}</td>
+                        <td>{{ usuario.username }}</td>
+                        <td>{{ usuario.nombre_completo }}</td>
+                        <td>{{ usuario.email }}</td>
+                        <td>
+                            {% if usuario.rol == 'Gerencia' %}
+                                <span class="badge bg-danger">Gerencia</span>
+                            {% elif usuario.rol == 'Recepcion' %}
+                                <span class="badge bg-primary">Recepción</span>
+                            {% else %}
+                                <span class="badge bg-info">Limpieza</span>
+                            {% endif %}
+                        </td>
+                        <td>{% if usuario.activo %}✅ Sí{% else %}❌ No{% endif %}</td>
+                        <td>
+                            <a href="/eliminar_usuario/{{ usuario.id }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este usuario?')">🗑️ Eliminar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Tab 2: HABITACIONES -->
+        <div class="tab-pane fade" id="habitaciones" role="tabpanel">
+            <h5 class="mb-3">Modificar Habitaciones</h5>
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Número</th>
+                        <th>Tipo Actual</th>
+                        <th>Nuevo Tipo</th>
+                        <th>Piso</th>
+                        <th>Precio Actual</th>
+                        <th>Nuevo Precio</th>
+                        <th>Ocupada</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hab in habitaciones %}
+                    <tr>
+                        <td><strong>{{ hab.numero }}</strong></td>
+                        <td>{{ hab.tipo }}</td>
+                        
+                        <!-- NUEVA COLUMNA: Cambiar Tipo de Cama -->
+                        <td>
+                            <form method="POST" action="{{ url_for('actualizar_tipo', hab_id=hab.id) }}" class="d-inline">
+                                <select name="nuevo_tipo" class="form-select form-select-sm" style="width: 110px;">
+                                    <option value="S" {% if hab.tipo == 'S' %}selected{% endif %}>S</option>
+                                    <option value="M" {% if hab.tipo == 'M' %}selected{% endif %}>M</option>
+                                    <option value="Q" {% if hab.tipo == 'Q' %}selected{% endif %}>Q</option>
+                                    <option value="J" {% if hab.tipo == 'J' %}selected{% endif %}>J</option>
+                                    <option value="C" {% if hab.tipo == 'C' %}selected{% endif %}>C</option>
+                                    <option value="T" {% if hab.tipo == 'T' %}selected{% endif %}>T</option>
+                                    <option value="Q+M" {% if hab.tipo == 'Q+M' %}selected{% endif %}>Q+M</option>
+                                    <option value="Q+S" {% if hab.tipo == 'Q+S' %}selected{% endif %}>Q+S</option>
+                                    <option value="M+S" {% if hab.tipo == 'M+S' %}selected{% endif %}>M+S</option>
+                                    <option value="S+S" {% if hab.tipo == 'S+S' %}selected{% endif %}>S+S</option>
+                                </select>
+                                <button type="submit" class="btn btn-warning btn-sm mt-1 w-100"><i class="fas fa-save"></i> Cambiar</button>
+                            </form>
+                        </td>
+                        
+                        <td>{{ hab.piso }}</td>
+                        <td>S/ {{ "%.2f"|format(hab.precio_base) }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('actualizar_precio', hab_id=hab.id) }}" class="d-inline">
+                                <input type="number" step="0.01" name="precio_nuevo" class="form-control form-control-sm" style="width: 100px;" 
+                                       value="{{ hab.precio_base }}" required>
+                                <button type="submit" class="btn btn-success btn-sm mt-1 w-100">Guardar</button>
+                            </form>
+                        </td>
+                        <td>
+                            {% if hab.estado_ocupacion == 'Ocupada' %}
+                                <span class="badge bg-danger">Ocupada</span>
+                            {% else %}
+                                <span class="badge bg-success">Libre</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/limpieza/{{ hab.id }}/Sucia" class="btn btn-sm btn-warning">Marcar Sucia</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Tab 3: CONFIGURACIÓN -->
+        <div class="tab-pane fade" id="configuracion" role="tabpanel">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Habitaciones en Mantenimiento</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Habitación</th>
+                                <th>Tipo</th>
+                                <th>Piso</th>
+                                <th>Estado Limpieza</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set habitaciones_mantenimiento = habitaciones | selectattr('estado_limpieza', 'equalto', 'En Mantenimiento') | list %}
+                            {% if habitaciones_mantenimiento %}
+                                {% for hab in habitaciones_mantenimiento %}
+                                <tr>
+                                    <td>{{ hab.numero }}</td>
+                                    <td>{{ hab.tipo }}</td>
+                                    <td>{{ hab.piso }}</td>
+                                    <td><span class="badge bg-warning">En Mantenimiento</span></td>
+                                    <td>
+                                        <a href="/limpieza/{{ hab.id }}/Limpia" class="btn btn-sm btn-success">Marcar Limpia</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No hay habitaciones en mantenimiento</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle"></i> <strong>Información:</strong>
+                <ul>
+                    <li>Los usuarios con rol "Recepción" pueden hacer Check-in y Check-out</li>
+                    <li>Los usuarios con rol "Limpieza" solo ven habitaciones sucias</li>
+                    <li>Los usuarios con rol "Gerencia" tienen acceso completo</li>
+                    <li>El cambio de precios y tipos afecta todas las nuevas reservas</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

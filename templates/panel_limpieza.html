@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3><i class="fas fa-broom text-primary"></i> Panel de Limpieza</h3>
+        <span class="badge bg-danger fs-6">{{ sucias|length }} Pendientes</span>
+    </div>
+
+    <!-- SECCIÓN: HABITACIONES SUCIAS (Prioridad) -->
+    <h5 class="text-danger mb-3">🚨 Por Limpiar (Prioridad)</h5>
+    <div class="row">
+        {% for hab in sucias %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card border-danger shadow-sm h-100">
+                <div class="card-header bg-danger text-white d-flex justify-content-between">
+                    <h5 class="mb-0">Hab. {{ hab.numero }} ({{ hab.tipo }})</h5>
+                    <span class="badge bg-white text-danger">Sucia</span>
+                </div>
+                <div class="card-body">
+                    <h6 class="fw-bold">📋 Checklist de Limpieza:</h6>
+                    <ul class="list-group list-group-flush mb-3 small">
+                        <li class="list-group-item"><input type="checkbox" class="form-check-input me-2"> Retirar ropa de cama usada</li>
+                        <li class="list-group-item"><input type="checkbox" class="form-check-input me-2"> Desinfectar baño y espejos</li>
+                        <li class="list-group-item"><input type="checkbox" class="form-check-input me-2"> Colocar toallas y amenities</li>
+                        <li class="list-group-item"><input type="checkbox" class="form-check-input me-2"> Aspirar y trapear piso</li>
+                        <li class="list-group-item"><input type="checkbox" class="form-check-input me-2"> Revisar luces y TV</li>
+                    </ul>
+                    
+                    <!-- Botón para marcar como limpia -->
+                    <a href="/limpieza/{{ hab.id }}/Limpia" class="btn btn-success w-100 btn-lg shadow">
+                        <i class="fas fa-check-circle"></i> Marcar como LIMPIA
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-success text-center">
+                <h4>✨ ¡Excelente trabajo! No hay habitaciones sucias pendientes.</h4>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <hr class="my-5">
+
+    <!-- SECCIÓN: HABITACIONES LIMPIAS (Confirmación) -->
+    <h5 class="text-success mb-3">✅ Ya Limpias (Listas para venta)</h5>
+    <div class="row opacity-75">
+        {% for hab in limpias %}
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card border-success text-center">
+                <div class="card-body py-3">
+                    <h5 class="mb-1">{{ hab.numero }}</h5>
+                    <small class="text-muted">{{ hab.tipo }}</small>
+                    <div class="mt-2 text-success"><i class="fas fa-check"></i> Lista</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

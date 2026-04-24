@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h3><i class="fas fa-calendar-alt"></i> Calendario de Ocupación (Próximos 30 días)</h3>
+    
+    <!-- Leyenda -->
+    <div class="alert alert-light mb-3">
+        <strong>Leyenda:</strong> 
+        <span class="badge bg-success me-2">✅ Limpia/Disponible</span>
+        <span class="badge bg-info me-2">🔵 Sucia</span>
+        <span class="badge bg-danger me-2">🔴 Ocupada</span>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Habitación</th>
+                    {% for dia in dias %}
+                        <th class="text-center" style="min-width: 40px;">{{ dia }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for hab in habitaciones %}
+                <tr>
+                    <td><strong>{{ hab.numero }}</strong> ({{ hab.tipo }})</td>
+                    {% for i in range(30) %}
+                        {% set estado = ocupacion.get(hab.numero, ['disponible'] * 30)[i] %}
+                        <td class="text-center" style="background-color: {% if estado == 'ocupado' %} #ffcfcf {% elif estado == 'sucia' %} #b3e0ff {% else %} #c7ffc7 {% endif %};">
+                            {% if estado == 'ocupado' %}
+                                🔴
+                            {% elif estado == 'sucia' %}
+                                🔵
+                            {% else %}
+                                ✅
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="mt-3">
+        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3><i class="fas fa-cart-plus"></i> Cargar Extras a Cuenta</h3>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <p class="mb-1"><strong>Huésped:</strong> {{ reserva.huesped.nombre }} {{ reserva.huesped.apellido }}</p>
+            <p class="mb-1"><strong>Habitación:</strong> {{ reserva.habitacion.numero }}</p>
+            <p class="mb-0"><strong>Deuda actual:</strong> S/ {{ "%.2f"|format(reserva.precio_total - reserva.precio_pagado) }}</p>
+        </div>
+    </div>
+
+    <form method="POST" class="card shadow-sm p-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Producto</label>
+                <select name="producto_id" class="form-select" required>
+                    <option value="">Seleccionar producto...</option>
+                    {% for p in productos %}
+                        <option value="{{ p.id }}">{{ p.nombre }} - S/ {{ p.precio }} (Stock: {{ p.stock }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold">Cantidad</label>
+                <input type="number" name="cantidad" class="form-control" min="1" value="1" required>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-warning w-100">
+                    <i class="fas fa-plus-circle"></i> Cargar
+                </button>
+            </div>
+        </div>
+    </form>
+    
+    <a href="/checkout/{{ reserva.id }}" class="btn btn-outline-secondary mt-3">
+        ← Volver al Check-out
+    </a>
+</div>
+{% endblock %}

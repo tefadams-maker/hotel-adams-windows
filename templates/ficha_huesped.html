@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    <!-- TARJETA DE DATOS DEL HUÉSPED -->
+    <div class="card shadow-sm mb-4 border-primary">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="fas fa-user-circle"></i> {{ huesped.nombre }} {{ huesped.apellido }}</h4>
+            <span class="badge bg-light text-dark fs-6">DNI: {{ huesped.dni }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <small class="text-muted">📱 Teléfono</small>
+                    <p class="fs-5 fw-bold">{{ huesped.celular or 'Sin registro' }}</p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">📧 Email</small>
+                    <p class="fs-5 fw-bold">{{ huesped.email or 'Sin registro' }}</p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">️ Visitas</small>
+                    <p class="fs-5 fw-bold">{{ reservas|length }} veces</p>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted">💰 Deuda Actual</small>
+                    <!-- Lógica: Si debe dinero, se pone rojo -->
+                    {% set deuda_total = reservas | sum(attribute='precio_total') - reservas | sum(attribute='precio_pagado') %}
+                    <p class="fs-5 fw-bold {% if deuda_total > 0 %}text-danger{% else %}text-success{% endif %}">
+                        S/ {{ "%.2f"|format(deuda_total) }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HISTORIAL DE ESTADÍAS -->
+    <h5 class="mb-3"><i class="fas fa-history"></i> Historial de Pagos</h5>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover border">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fecha Entrada</th>
+                    <th>Habitación</th>
+                    <th>Días</th>
+                    <th>Total S/</th>
+                    <th>Pagado S/</th>
+                    <th>Método</th>
+                    <th>Estado</th>
+                    <th>Saldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reservas %}
+                <tr>
+                    <td>{{ r.fecha_entrada.strftime('%d/%m/%Y') }}</td>
+                    <td><span class="badge bg-secondary">{{ r.habitacion.numero }}</span></td>
+                    <td>{{ (r.fecha_salida - r.fecha_entrada).days }}</td>
+                    <td>S/ {{ "%.2f"|format(r.precio_total) }}</td>
+                    <td>S/ {{ "%.2f"|format(r.precio_pagado) }}</td>
+                    <td>{{ r.metodo_pago }}</td>
+                    <td>
+                        {% if r.estado == 'Activa' %}
+                            <span class="badge bg-warning text-dark">Ocupando</span>
+                        {% else %}
+                            <span class="badge bg-success">Finalizada</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold {% if (r.precio_total - r.precio_pagado) > 0 %}text-danger{% else %}text-success{% endif %}">
+                        S/ {{ "%.2f"|format(r.precio_total - r.precio_pagado) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="/historial" class="btn btn-outline-secondary mt-3">
+        <i class="fas fa-arrow-left"></i> Volver al Historial
+    </a>
+</div>
+{% endblock %}

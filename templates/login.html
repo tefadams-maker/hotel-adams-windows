@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Hotel Adams</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+        }
+        .login-left {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .hotel-logo {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        .hotel-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+        .login-right {
+            padding: 60px 40px;
+        }
+        .form-control {
+            border-radius: 10px;
+            padding: 12px 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+        .copyright {
+            color: #888;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card login-card">
+            <div class="row g-0">
+                <!-- Izquierda: Logo -->
+                <div class="col-md-5 login-left">
+                    <div class="mt-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="hotel-logo" viewBox="0 0 100 120" fill="white">
+                            <rect x="20" y="20" width="30" height="80" rx="3"/>
+                            <rect x="55" y="40" width="30" height="60" rx="3"/>
+                            <circle cx="35" cy="35" r="5" fill="rgba(255,255,255,0.5)"/>
+                            <circle cx="70" cy="55" r="5" fill="rgba(255,255,255,0.5)"/>
+                            <line x1="25" y1="50" x2="45" y2="50" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+                            <line x1="25" y1="70" x2="45" y2="70" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+                        </svg>
+                        <div class="hotel-title">MI HOTEL</div>
+                        <small>Sistema de Gestión Integral</small>
+                    </div>
+                </div>
+                
+                <!-- Derecha: Login Form -->
+                <div class="col-md-7 login-right">
+                    <h4 class="mb-4" style="color: #555;">Bienvenido/a</h4>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST">
+                        <div class="mb-3">
+                            <input type="text" name="username" class="form-control" placeholder="Nombre de usuario" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Ingresar</button>
+                    </form>
+                    
+                    <hr>
+                    <div class="copyright text-center">
+                        Todos los derechos reservados © Open Source - 
+                        <a href="#" class="text-decoration-none">CLICK AQUÍ !!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

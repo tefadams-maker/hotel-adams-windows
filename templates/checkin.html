@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h3><i class="fas fa-user-plus"></i> Check-in / Nueva Reserva</h3>
+    <hr>
+
+    <form method="POST" action="/checkin">
+        
+        <!-- SECCIÓN 1: Fechas y Habitación -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> 1. Fechas y Habitación</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">📅 Fecha de Entrada</label>
+                        <input type="date" name="fecha_entrada" id="fecha_entrada" class="form-control" value="{{ hoy }}" required>
+                        <small class="text-muted">Si cambias la fecha a futuro, funcionará como Reserva.</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">📅 Fecha de Salida</label>
+                        <input type="date" name="fecha_salida" id="fecha_salida" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">🏨 Seleccionar Habitación</label>
+                <select name="habitacion_id" id="habitacion_id" class="form-select" required>
+    <option value="" selected disabled>-- Elige una habitación --</option>
+    {% for hab in habitaciones %}
+        <!-- 🔍 Verificar si está ocupada y hasta cuándo -->
+        {% set esta_ocupada = false %}
+        {% set fecha_liberacion = '-' %}
+        {% for res in reservas_activas %}
+            {% if res.habitacion_id == hab.id %}
+                {% set esta_ocupada = true %}
+                {% set fecha_liberacion = res.fecha_salida.strftime('%d/%m') %}
+            {% endif %}
+        {% endfor %}
+
+        <option value="{{ hab.id }}" 
+                data-price="{{ hab.precio_base }}"
+                {% if hab_id_seleccionada == hab.id %}selected{% endif %}>
+            Habitación {{ hab.numero }} | {{ hab.tipo }} | S/ {{ hab.precio_base }}
+            {% if esta_ocupada %}
+                🔴 Ocupada hasta {{ fecha_liberacion }}
+            {% elif hab.estado_limpieza == 'Sucia' %}
+                🧹 Sucia (Reservable)
+            {% else %}
+                ✅ Disponible
+            {% endif %}
+        </option>
+    {% endfor %}
+</select>
+<small class="text-muted d-block mt-1">
+    💡 Puedes reservar habitaciones "Ocupadas" si tu fecha de entrada es posterior a su liberación.
+</small>   
+                </div>
+                
+                <!-- 🔔 DISPLAY DEL TOTAL AUTOMÁTICO -->
+                <div class="alert alert-info text-center fw-bold fs-5 mb-0 mt-3" id="total-display" style="display: none;">
+                    💰 Total a Pagar: <span id="total-monto" class="text-primary">S/ 0.00</span> 
+                    <span class="badge bg-secondary ms-2" id="dias-estadia">0 noches</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: Datos del Huésped -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-user"></i> 2. Datos del Huésped</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">DNI / Pasaporte</label>
+                        <input type="text" name="dni" class="form-control" required placeholder="12345678">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Apellido</label>
+                        <input type="text" name="apellido" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Nacionalidad</label>
+                        <input type="text" name="nacionalidad" class="form-control" value="Perú">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Celular</label>
+                        <input type="text" name="celular" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: Pago -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-money-bill-wave"></i> 3. Pago</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Monto Recibido (S/)</label>
+                        <input type="number" step="0.01" name="pago" class="form-control" placeholder="0.00" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Método de Pago</label>
+                        <select name="metodo_pago" class="form-select">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Yape">Yape</option>
+                            <option value="Tarjeta">Tarjeta</option>
+                            <option value="Transferencia">Transferencia</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Observaciones</label>
+                        <input type="text" name="observaciones" class="form-control" placeholder="Ej: Cama extra...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTÓN FINAL -->
+        <div class="d-grid gap-2 mb-5">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-save"></i> Confirmar Check-in / Reserva
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- 🧮 SCRIPT DE CÁLCULO AUTOMÁTICO -->
+<script>
+    function calcularTotal() {
+        const fechaEntradaVal = document.getElementById('fecha_entrada').value;
+        const fechaSalidaVal = document.getElementById('fecha_salida').value;
+        const habitacionSelect = document.getElementById('habitacion_id');
+        const totalDisplay = document.getElementById('total-display');
+        const totalMontoSpan = document.getElementById('total-monto');
+        const diasEstadiaSpan = document.getElementById('dias-estadia');
+
+        // Si falta algún dato, ocultamos el total
+        if (!fechaEntradaVal || !fechaSalidaVal || !habitacionSelect.value) {
+            totalDisplay.style.display = 'none';
+            return;
+        }
+
+        const fechaEntrada = new Date(fechaEntradaVal);
+        const fechaSalida = new Date(fechaSalidaVal);
+        
+        // Calcular diferencia en días
+        const diffTime = fechaSalida - fechaEntrada;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays <= 0) {
+            totalDisplay.style.display = 'none';
+            return;
+        }
+
+        // Obtener precio de la habitación seleccionada
+        const selectedOption = habitacionSelect.options[habitacionSelect.selectedIndex];
+        const precioNoche = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+        
+        const total = precioNoche * diffDays;
+        
+        totalMontoSpan.textContent = `S/ ${total.toFixed(2)}`;
+        diasEstadiaSpan.textContent = `${diffDays} noche${diffDays > 1 ? 's' : ''}`;
+        totalDisplay.style.display = 'block';
+    }
+
+    // Escuchar cambios en los campos
+    document.getElementById('fecha_entrada').addEventListener('change', calcularTotal);
+    document.getElementById('fecha_salida').addEventListener('change', calcularTotal);
+    document.getElementById('habitacion_id').addEventListener('change', calcularTotal);
+    
+    // Calcular al cargar por si hay valores por defecto
+    window.addEventListener('DOMContentLoaded', calcularTotal);
+</script>
+{% endblock %}

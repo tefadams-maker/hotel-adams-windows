@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-lg border-0">
+        
+        <!-- ENCABEZADO -->
+        <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="fas fa-sign-out-alt"></i> Check-out Habitación {{ reserva.habitacion.numero }}</h4>
+            <span class="badge bg-white text-dark">#{{ reserva.id }}</span>
+        </div>
+        
+        <div class="card-body p-4">
+            
+            <!-- INFORMACIÓN DEL HUÉSPED Y FECHAS -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5 class="text-primary mb-2"><i class="fas fa-user"></i> Huésped</h5>
+                    <p class="mb-1 fs-5">{{ reserva.huesped.nombre }} {{ reserva.huesped.apellido }}</p>
+                    <p class="mb-0 text-muted">DNI: {{ reserva.huesped.dni }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-primary mb-2"><i class="fas fa-calendar-alt"></i> Fechas</h5>
+                    <p class="mb-1">Entrada: {{ reserva.fecha_entrada.strftime('%d/%m/%Y') }}</p>
+                    <p class="mb-0">Salida: {{ reserva.fecha_salida.strftime('%d/%m/%Y') }}</p>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+
+            <!-- 🔹 RESUMEN RÁPIDO (2 Tarjetas) -->
+            <div class="row mb-3 text-center">
+                <div class="col-md-6">
+                    <div class="card bg-light p-3 border-0">
+                        <small class="text-muted fw-bold text-uppercase">Costo Hospedaje</small>
+                        <h3 class="mb-0">S/ {{ "%.2f"|format(reserva.precio_total) }}</h3>
+                        <small class="text-success">({{ (reserva.fecha_salida - reserva.fecha_entrada).days }} noches)</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-info text-white p-3 border-0">
+                        <small class="fw-bold text-uppercase">Extras / Mini-bar</small>
+                        <h3 class="mb-0">S/ {{ "%.2f"|format(total_extras) }}</h3>
+                        <small>{{ reserva.cargos_extras | length }} productos</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 💰 TARJETA DESTACADA: MONTO A COBRAR AHORA -->
+            {% set monto_pendiente = (reserva.precio_total + total_extras) - reserva.precio_pagado %}
+            <div class="card {% if monto_pendiente > 0 %}bg-warning text-dark{% else %}bg-success text-white{% endif %} p-4 mb-4 text-center shadow border-0">
+                <h5 class="fw-bold mb-2">
+                    {% if monto_pendiente > 0 %}💰 MONTO A COBRAR AHORA{% else %}✅ CUENTA SALDADA{% endif %}
+                </h5>
+                <h2 class="display-5 fw-bold mb-0">S/ {{ "%.2f"|format(monto_pendiente) }}</h2>
+                <small class="d-block mt-2 opacity-75">
+                    Total cuenta: S/ {{ "%.2f"|format(reserva.precio_total + total_extras) }} | Ya pagado: S/ {{ "%.2f"|format(reserva.precio_pagado) }}
+                </small>
+            </div>
+
+            <!-- 🔹 TABLA DE CONSUMOS (Solo si hay) -->
+            {% if reserva.cargos_extras %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0 bg-light">
+                        <div class="card-header bg-white fw-bold">🛒 Detalle de Consumos</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Producto</th>
+                                        <th>Cant.</th>
+                                        <th>Precio Unit.</th>
+                                        <th class="text-end pe-3">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cargo in reserva.cargos_extras %}
+                                    <tr>
+                                        <td class="ps-3">{{ cargo.producto.nombre }}</td>
+                                        <td>{{ cargo.cantidad }}</td>
+                                        <td>S/ {{ "%.2f"|format(cargo.precio_unitario) }}</td>
+                                        <td class="text-end pe-3 fw-bold">S/ {{ "%.2f"|format(cargo.cantidad * cargo.precio_unitario) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+                     <!-- FORMULARIO DE CAMBIO DE FECHA Y PAGO -->
+            <form method="POST" class="bg-white p-4 rounded border shadow-sm">
+                
+                <!-- 📅 CAMBIO DE FECHA REAL DE SALIDA -->
+                <div class="mb-4 p-3 bg-light rounded border">
+                    <label class="form-label fw-bold">📅 Fecha Real de Salida</label>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-6">
+                            <input type="date" id="fecha_real_salida" name="fecha_real_salida" 
+                                   class="form-control form-control-lg" 
+                                   value="{{ reserva.fecha_salida.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="cambio_fecha_alert" class="alert mb-0 py-2 d-none">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <span id="cambio_fecha_texto"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">
+                        Fecha original: {{ reserva.fecha_salida.strftime('%d/%m/%Y') }} | 
+                        Noches originales: {{ (reserva.fecha_salida - reserva.fecha_entrada).days }}
+                    </small>
+                </div>
+
+                <!-- 💰 RESUMEN DINÁMICO (Se actualiza con JS al cambiar fecha) -->
+                <div class="row mb-3 text-center" id="resumen_dinamico">
+                    <div class="col-4">
+                        <small class="text-muted d-block">Nuevas Noches</small>
+                        <strong class="fs-5 text-primary" id="js_noches">{{ (reserva.fecha_salida - reserva.fecha_entrada).days }}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Nuevo Subtotal</small>
+                        <strong class="fs-5 text-primary" id="js_subtotal">S/ {{ "%.2f"|format(reserva.precio_total) }}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Total con Extras</small>
+                        <strong class="fs-5 text-success" id="js_total">S/ {{ "%.2f"|format(reserva.precio_total + total_extras) }}</strong>
+                    </div>
+                </div>
+
+                <!-- 💰 TARJETA GRANDE: MONTO A COBRAR AHORA (Se actualiza con JS) -->
+                {% set monto_pendiente_original = (reserva.precio_total + total_extras) - reserva.precio_pagado %}
+                <div class="card {% if monto_pendiente_original > 0 %}bg-warning text-dark{% else %}bg-success text-white{% endif %} p-4 mb-4 text-center shadow border-0" id="tarjeta_cobro">
+                    <h5 class="fw-bold mb-2" id="js_titulo_cobro">
+                        {% if monto_pendiente_original > 0 %}💰 MONTO A COBRAR AHORA{% else %}✅ CUENTA SALDADA{% endif %}
+                    </h5>
+                    <h2 class="display-5 fw-bold mb-0" id="js_monto_cobro">S/ {{ "%.2f"|format(monto_pendiente_original) }}</h2>
+                    <small class="d-block mt-2 opacity-75">
+                        Total cuenta: S/ <span id="js_total_cuenta">{{ "%.2f"|format(reserva.precio_total + total_extras) }}</span> | Ya pagado: S/ {{ "%.2f"|format(reserva.precio_pagado) }}
+                    </small>
+                </div>
+
+                <!-- 🔹 TABLA DE CONSUMOS (Solo si hay) -->
+                {% if reserva.cargos_extras %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 bg-light">
+                            <div class="card-header bg-white fw-bold">🛒 Detalle de Consumos</div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-3">Producto</th>
+                                            <th>Cant.</th>
+                                            <th>Precio Unit.</th>
+                                            <th class="text-end pe-3">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for cargo in reserva.cargos_extras %}
+                                        <tr>
+                                            <td class="ps-3">{{ cargo.producto.nombre }}</td>
+                                            <td>{{ cargo.cantidad }}</td>
+                                            <td>S/ {{ "%.2f"|format(cargo.precio_unitario) }}</td>
+                                            <td class="text-end pe-3 fw-bold">S/ {{ "%.2f"|format(cargo.cantidad * cargo.precio_unitario) }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <hr>
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">💰 Monto a Registrar (S/)</label>
+                        <input type="number" step="0.01" id="pago_adicional" name="pago_adicional" 
+                               class="form-control form-control-lg fw-bold" 
+                               value="{{ "%.2f"|format(monto_pendiente_original) if monto_pendiente_original > 0 else '0.00' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">💳 Método de Pago</label>
+                        <select name="metodo_pago_saldo" class="form-select form-select-lg">
+                            <option value="Efectivo">💵 Efectivo</option>
+                            <option value="Yape">📱 Yape / Plin</option>
+                            <option value="Tarjeta">💳 Tarjeta</option>
+                            <option value="Transferencia">🏦 Transferencia</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- BOTONES -->
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-success btn-lg shadow-sm fw-bold text-uppercase">
+                        <i class="fas fa-check-circle"></i> Confirmar Check-out
+                    </button>
+                    <a href="/historial" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>   
+            
+        </div>
+    </div>
+</div>
+
+<script>
+// Datos originales desde Python (seguros para JS)
+const fechaEntradaStr = "{{ reserva.fecha_entrada.strftime('%Y-%m-%d') }}";
+const fechaSalidaOriginalStr = "{{ reserva.fecha_salida.strftime('%Y-%m-%d') }}";
+const precioPorNoche = {{ reserva.habitacion.precio_base }};
+const totalExtras = {{ total_extras }};
+const yaPagado = {{ reserva.precio_pagado }};
+const precioTotalOriginal = {{ reserva.precio_total }};
+
+const fechaEntrada = new Date(fechaEntradaStr);
+const fechaSalidaOriginal = new Date(fechaSalidaOriginalStr);
+
+// Elementos del DOM
+const inputFecha = document.getElementById('fecha_real_salida');
+const alertCambio = document.getElementById('cambio_fecha_alert');
+const textoCambio = document.getElementById('cambio_fecha_texto');
+
+// Elementos del resumen dinámico
+const jsNoches = document.getElementById('js_noches');
+const jsSubtotal = document.getElementById('js_subtotal');
+const jsTotal = document.getElementById('js_total');
+
+// Elementos de la tarjeta de cobro
+const tarjetaCobro = document.getElementById('tarjeta_cobro');
+const jsTituloCobro = document.getElementById('js_titulo_cobro');
+const jsMontoCobro = document.getElementById('js_monto_cobro');
+const jsTotalCuenta = document.getElementById('js_total_cuenta');
+const inputPago = document.getElementById('pago_adicional');
+
+// Función principal: recalcular todo al cambiar fecha
+function recalcularCheckout() {
+    const nuevaFechaStr = inputFecha.value;
+    if (!nuevaFechaStr) return;
+    
+    const nuevaFecha = new Date(nuevaFechaStr);
+    const diffTime = nuevaFecha - fechaEntrada;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const nochesReales = Math.max(1, diffDays);
+    
+    // Calcular nuevos totales
+    const nuevoSubtotal = nochesReales * precioPorNoche;
+    const nuevoTotalCuenta = nuevoSubtotal + totalExtras;
+    const pendiente = nuevoTotalCuenta - yaPagado;
+    
+    // 🔥 Actualizar resumen dinámico (3 columnas)
+    jsNoches.textContent = nochesReales;
+    jsSubtotal.textContent = 'S/ ' + nuevoSubtotal.toFixed(2);
+    jsTotal.textContent = 'S/ ' + nuevoTotalCuenta.toFixed(2);
+    
+    // 🔥 Actualizar tarjeta grande de cobro
+    jsTotalCuenta.textContent = 'S/ ' + nuevoTotalCuenta.toFixed(2);
+    jsMontoCobro.textContent = 'S/ ' + Math.max(0, pendiente).toFixed(2);
+    
+    // Cambiar color y texto según si debe o no
+    if (pendiente > 0) {
+        tarjetaCobro.className = 'card bg-warning text-dark p-4 mb-4 text-center shadow border-0';
+        jsTituloCobro.textContent = '💰 MONTO A COBRAR AHORA';
+    } else {
+        tarjetaCobro.className = 'card bg-success text-white p-4 mb-4 text-center shadow border-0';
+        jsTituloCobro.textContent = '✅ CUENTA SALDADA';
+    }
+    
+    // 🔥 Actualizar campo de pago automáticamente
+    inputPago.value = Math.max(0, pendiente).toFixed(2);
+    if (pendiente > 0) {
+        inputPago.classList.add('bg-warning');
+    } else {
+        inputPago.classList.remove('bg-warning');
+    }
+    
+    // 🔥 Mostrar alerta de cambio de fecha
+    alertCambio.classList.remove('d-none', 'alert-info', 'alert-warning', 'alert-success');
+    
+    if (nuevaFecha < fechaSalidaOriginal) {
+        alertCambio.classList.add('alert-info');
+        const diasAntes = Math.ceil((fechaSalidaOriginal - nuevaFecha) / (1000 * 60 * 60 * 24));
+        textoCambio.textContent = '🔵 Salida anticipada (' + diasAntes + ' día' + (diasAntes > 1 ? 's' : '') + ' antes).';
+    } else if (nuevaFecha > fechaSalidaOriginal) {
+        alertCambio.classList.add('alert-warning');
+        const diasDespues = Math.ceil((nuevaFecha - fechaSalidaOriginal) / (1000 * 60 * 60 * 24));
+        textoCambio.textContent = '🟡 Extensión (' + diasDespues + ' día' + (diasDespues > 1 ? 's' : '') + ' más).';
+    } else {
+        alertCambio.classList.add('alert-success');
+        textoCambio.textContent = '✅ Fecha original mantenida.';
+    }
+}
+
+// Escuchar cambios en la fecha
+if (inputFecha) {
+    inputFecha.addEventListener('change', recalcularCheckout);
+    // Ejecutar al cargar para inicializar
+    recalcularCheckout();
+}
+
+// Enfocar campo de pago si hay deuda
+window.onload = function() {
+    const deuda = parseFloat(inputPago.value) || 0;
+    if (deuda > 0.5 && inputPago) {
+        inputPago.focus();
+        inputPago.select();
+    }
+};
+</script>
+{% endblock %}

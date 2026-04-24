@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3><i class="fas fa-search"></i> Buscar Huésped</h3>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar por nombre o DNI..." value="{{ query }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Buscar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if resultados %}
+    <div class="mt-4">
+        <h5>Resultados encontrados:</h5>
+        <table class="table table-striped mt-3">
+            <thead class="table-dark">
+                <tr>
+                    <th>Habitación</th>
+                    <th>Huésped</th>
+                    <th>DNI</th>
+                    <th>Fecha Entrada</th>
+                    <th>Fecha Salida</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reserva in resultados %}
+                <tr>
+                    <td>{{ reserva.habitacion.numero }}</td>
+                    <td>{{ reserva.huesped.nombre }}</td>
+                    <td>{{ reserva.huesped.dni }}</td>
+                    <td>{{ reserva.fecha_entrada.strftime('%d/%m %H:%M') }}</td>
+                    <td>{{ reserva.fecha_salida.strftime('%d/%m %H:%M') if reserva.fecha_salida else '-' }}</td>
+                    <td>S/ {{ "%.2f"|format(reserva.precio_total) }}</td>
+                    <td>
+                        {% if reserva.estado == 'Activa' %}
+                            <span class="badge bg-primary">Activa</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Finalizada</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    <div class="mt-3">
+        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
+</div>
+{% endblock %}
