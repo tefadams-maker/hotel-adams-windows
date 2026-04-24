@@ -1,0 +1,32 @@
+name: Crear EXE para Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+        
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Instalar librerías
+        run: |
+          pip install flask flask-sqlalchemy openpyxl pyinstaller
+          
+      - name: Crear el .exe
+        run: |
+          pyinstaller --onefile --name HotelAdams --add-data "templates;templates" app.py
+          
+      - name: Guardar resultado
+        uses: actions/upload-artifact@v4
+        with:
+          name: HotelAdams-Windows
+          path: dist/HotelAdams.exe
+          retention-days: 7
